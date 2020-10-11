@@ -1,5 +1,5 @@
-#include <math.h>
-#include <stdio.h>
+#include <math.h> 
+#include <stdio.h> 
 #include <stdlib.h>
 
 // Written by Tyler Harrison
@@ -27,3 +27,5 @@ int main(int argc, char *argv[])
     printf("\n");
     return 0;
 }
+
+
