@@ -1,0 +1,43 @@
+Enter number of game disks: 3
+1 left 
+2 right 
+1 left 
+3 left 
+1 left 
+2 right 
+1 left 
+done
+
+Enter number of game disks: 5
+1 left 
+2 right 
+1 left 
+3 left 
+1 left 
+2 right 
+1 left 
+4 right 
+1 left 
+2 right 
+1 left 
+3 left 
+1 left 
+2 right 
+1 left 
+5 left 
+1 left 
+2 right 
+1 left 
+3 left 
+1 left 
+2 right 
+1 left 
+4 right 
+1 left 
+2 right 
+1 left 
+3 left 
+1 left 
+2 right 
+1 left 
+done
