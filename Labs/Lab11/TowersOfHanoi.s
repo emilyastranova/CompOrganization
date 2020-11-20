@@ -11,11 +11,9 @@
         .align  2
 .data
 
-prompt: .asciz  "Enter number of game disks: "
-left: .asciz   "left"
-format: .asciz "%s"
-string: .asciz "Output: %s\n"
-storage: .space 80          @ --- added buffer
+prompt: .asciz  "Enter number of game disks: \n"
+left: .asciz   "%d left\n"
+right: .asciz   "%d right\n"
 false: .asciz "false\n"
 true: .asciz "true\n"
 
@@ -25,41 +23,89 @@ true: .asciz "true\n"
         .global main
         .type   main, %function
 main:
-        push    {r11, lr}       @ prologue. Save Frame Pointer and LR onto the stack */
-	add     r11, sp, #0     @ prologue. set up the bottom of our stack frame */
-        sub     sp, sp, #12     @ Make room for r3 and r4
-        str     r3, [sp, 4]     @ save r3
-        @str     r4, [sp, 8]     @ save r4 (our memory counter)
-        @mov     r4, #12         @ Memory counter begins at 12
+        push    {r4, fp, lr}    @ prologue. Save Frame Pointer and LR onto the stack */
+	add     fp, sp, #4      @ prologue. set up the bottom of our stack frame */
+        mov     r0, #3
+        bl      malloc          @ Get memory from the heap
+        mov     r4, r0
+        ldr     r0, promptAddr  @ Prompt user for input
+        bl      printf
 
-        mov     r3, #3          @ Constant 3 instead of user input for now
+        @mov     r0, r4         @ WIP input code
+        @mov     r1, #3
+        @bl      readLn
+
+        @mov     r0, r4
+        @bl      uDecToInt
+
+        mov     r0, #3          @ Constant 3 instead of user input for now
                                 @ Register 0 is our arg1 (n value) for moves()
                                 @ Register 1 is our arg2 (the boolean) for moves()
-        @mov     r1, #0          @ Test make true
+        mov     r1, #1          @ Test make true
         
-        @bl      toggleLeftMove  @ Toggle leftMove boolean value
-        bl      moves
-
-        ldr     r4, [sp, 4]     @ Restore r3
-        ldr     r4, [sp, 8]     @ Restore r4
-        add     sp, fp, #0      @ Reset the stack pointer
-        pop     {fp, pc}
+        bl      moves           @ branch and link to moves
+        
+        mov     r0, r4          @ Put memory address in r0 to use free
+        bl      free            @ Free memory from the heap
+        @add     sp, fp, #0      @ Reset the stack pointer
+        pop     {r4, fp, pc}    @ Pop everything off the stack
 
 moves:
+        push    {fp, lr}        @ A solution to my previous attempt at moving memory manually
+        add     fp, sp, #4      @ Create our new frame by moving frame pointer
+
+        sub     sp, sp, #8      @ Make room for 2 numbers (our parameters)
+        str     r0, [fp, #-8]   @ Store our first paramter on stack (n value)
+        str     r1, [fp, #-12]  @ Store second paramter (boolean)
+
         cmp     r0, #0          @ If n == 0
         BEQ     endMoves        @ return
+        
         sub     r0, r0, #1      @ Subtract 1 from n and store n in r0
-        bl      toggleLeftMove  @ Toggle leftMove boolean
-        sub     sp, sp, #4      @ Make some room in memory
-        str     lr, [sp, 4]     @ Store link register
-        @add     r4, #4          @ Move memory counter for storing lr
+
+        @bl      toggleLeftMove  @ Toggle leftMove boolean
+        cmp     r1, #0
+        moveq   r1, #1
+        movne   r1, #0
+        uxtb    r1, r1
+
         bl      moves           @ branch and link to moves
+        
+        cmp     r1, #1          @ If left, print that, otherwise print right
+        BEQ     printLeft
+        B       printRight  
+
+if:
+	ldr     r1, [fp, #-8]
+	ldr     r3, [fp, #-12]				@ if (leftMove)
+	cmp     r3, #1
+	beq 	printLeft
+
+printRight:
+        ldr     r0, rightAddr
+        ldr     r1, [fp, #-8]
+        bl      printf
+        b       endif
+
+printLeft:
+        ldr     r0, leftAddr
+        ldr     r1, [fp, #-8]
+        bl      printf
+        b       endif
+endif:
+        cmp     r1, #0
+        moveq   r1, #1
+        movne   r1, #0
+        uxtb    r1, r1
+
+        ldr     r0, [fp, #-8]   @ Store our first paramter on stack (n value)
+        ldr     r1, [fp, #-12]  @ Store second paramter (boolean)
+
         bl      moves           @ branch and link to moves
 
-endMoves:
-        ldr     lr, [sp, 4]    @ Load last link register from memory
-        add     sp, sp, #4     @ Add 4 to stack pointer to point to next link register
-        bx lr
+endMoves:                       @ No clue what to do here, this is potentially where my problem is
+	sub	sp, fp, #4
+	pop	{fp, pc}
 
 toggleLeftMove:
         cmp r1, #1
@@ -75,22 +121,8 @@ turnLeftMoveTrue:
         mov r1, #1
         bx lr
 
-getInput:
-        ldr     r0, promptAddr
-        bl      printf
-
-        ldr     r0, addr_format     @ Loading first parameter of scanf
-        ldr     r1, addr_storage    @ Location to write data from input
-        bl      scanf               @ Calling scanf
-
-        ldr     r1, addr_storage    @ data location
-        ldr     r0, addr_string     @ printf format
-        bl      printf   
-
 leftAddr: .word   left
+rightAddr: .word  right
 promptAddr: .word   prompt
-addr_format: .word format
-addr_string: .word string
-addr_storage: .word storage         @ --- address of buffer
 falseAddr: .word false
-trueAddr: .word true
+trueAddr: .word true 
