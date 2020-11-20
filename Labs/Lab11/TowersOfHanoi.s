@@ -31,14 +31,15 @@ main:
         ldr     r0, promptAddr  @ Prompt user for input
         bl      printf
 
-        @mov     r0, r4         @ WIP input code
-        @mov     r1, #3
-        @bl      readLn
+	@ read and convert input to int, store in r0
+	mov	r0, r4
+        mov     r1, #3
+	bl 	readLn
 
-        @mov     r0, r4
-        @bl      uDecToInt
+	mov     r0, r4
+	bl 	uDecToInt
 
-        mov     r0, #3          @ Constant 3 instead of user input for now
+        @mov     r0, #3          @ Constant 3 instead of user input for now
                                 @ Register 0 is our arg1 (n value) for moves()
                                 @ Register 1 is our arg2 (the boolean) for moves()
         mov     r1, #1          @ Test make true
@@ -47,7 +48,7 @@ main:
         
         mov     r0, r4          @ Put memory address in r0 to use free
         bl      free            @ Free memory from the heap
-        @add     sp, fp, #0      @ Reset the stack pointer
+
         pop     {r4, fp, pc}    @ Pop everything off the stack
 
 moves:
@@ -63,7 +64,6 @@ moves:
         
         sub     r0, r0, #1      @ Subtract 1 from n and store n in r0
 
-        @bl      toggleLeftMove  @ Toggle leftMove boolean
         cmp     r1, #0
         moveq   r1, #1
         movne   r1, #0
@@ -93,33 +93,20 @@ printLeft:
         bl      printf
         b       endif
 endif:
-        cmp     r1, #0
-        moveq   r1, #1
-        movne   r1, #0
-        uxtb    r1, r1
-
-        ldr     r0, [fp, #-8]   @ Store our first paramter on stack (n value)
-        ldr     r1, [fp, #-12]  @ Store second paramter (boolean)
-
-        bl      moves           @ branch and link to moves
+        ldr     r3, [fp, #-8]            
+        sub     r2, r3, #1               
+        ldr     r3, [fp, #-12]           
+        cmp     r3, #0                   
+        moveq   r3, #1                   
+        movne   r3, #0                   
+        uxtb    r3, r3                   
+        mov     r0, r2                   
+        mov     r1, r3                   
+        bl      moves                   
 
 endMoves:                       @ No clue what to do here, this is potentially where my problem is
 	sub	sp, fp, #4
 	pop	{fp, pc}
-
-toggleLeftMove:
-        cmp r1, #1
-        BEQ turnLeftMoveFalse
-        b turnLeftMoveTrue
-        bx  lr
-
-turnLeftMoveFalse:
-        mov r1, #0
-        bx lr
-
-turnLeftMoveTrue:
-        mov r1, #1
-        bx lr
 
 leftAddr: .word   left
 rightAddr: .word  right

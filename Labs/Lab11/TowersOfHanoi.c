@@ -7,25 +7,25 @@ void moves(int n, bool leftMove)
         return;
     }
     moves(n-1, !leftMove);
-    if(leftMove) {
-        printf("%d", n);
-        printf("%s", " left \n");
-    }
-    else{
-        printf("%d", n);
-        printf("%s", " right \n");
-    }
+    // if(leftMove) {
+    //     printf("%d", n);
+    //     printf("%s", " left \n");
+    // }
+    // else{
+    //     printf("%d", n);
+    //     printf("%s", " right \n");
+    // }
     moves(n-1, !leftMove);
 }
 
 int main()
 {
-    int n;
+    int n = 3;
 
-    printf("%s", "Enter number of game disks: ");
-    scanf("%d", &n);
+    // printf("%s", "Enter number of game disks: ");
+    // scanf("%d", &n);
     moves(n, true);
-    printf("%s", "done\n");
+    // printf("%s", "done\n");
 
     return 0;
 }
