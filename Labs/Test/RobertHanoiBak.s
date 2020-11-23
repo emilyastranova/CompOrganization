@@ -68,20 +68,14 @@ action:
 
     ldr     r3, [fp, #-8]       @ r3 <- n
     sub     r2, r3, #1          @ r2 <- n-1
-    ldr		r3, [fp, #-12]      @ r3 <- ! leftMove ; @this resets r3 to 1 for some reason causing it to loop
-    cmp		r3, #0		@ compare with a 0
-	moveq	r3, #1		@ if it is a 0, "flip it" to a 1
-	movne	r3, #0		@ if it is a 1, "flip it" to a 0
-	uxtb	r3, r3		@ make sure all the other are 0's except for r3
-	mov		r1, r3		@ assign r3 back to r1 (leftMove boolean)
-    mov     r0, r2      @ assign r2 back to r0 (n)
+	ldr		r3, [fp, #-12]
+	bl		leftMove
 	bl		action
 
 	ldr     r1, [fp, #-8]
-	ldr     r3, [fp, #-12]				@ if (leftMove)
+    ldr     r3, [fp, #-12]      @ if (leftMove)
     cmp     r3, #1
     bne     printRight
-    beq     printLeft
 
 printLeft:
 	 ldr     r0, leftMsgAddr     @ output n, " left "
@@ -98,12 +92,7 @@ endif:
     ldr     r3, [fp, #-8]       @ r2 <- n-1
     sub     r2, r3, #1
     ldr     r3, [fp, #-12]      @ r3 <- ! leftMove
-    cmp		r3, #0		@ compare with a 0
-	moveq	r3, #1		@ if it is a 0, "flip it" to a 1
-	movne	r3, #0		@ if it is a 1, "flip it" to a 0
-	uxtb	r3, r3		@ make sure all the other are 0's except for r3
-    mov     r0, r2                   
-    mov     r1, r3    
+	bl		leftMove
     bl      action
 
 epilogue:
@@ -111,9 +100,8 @@ epilogue:
     pop     {fp, pc}
 
 leftMove:
-    ldr		r3, [fp, #-12]      @ r3 <- ! leftMove
- 	mov		r3, #1		@ regester
-	cmp		r3, #0		@ compare with a 0
+@ 	mov		r4, #1		@ regester
+	cmp		r4, #0		@ compare with a 0
 	moveq	r3, #1		@ if it is a 0, "flip it" to a 1
 	movne	r3, #0		@ if it is a 1, "flip it" to a 0
 	uxtb	r3, r3		@ make sure all the other are 0's except for r3
