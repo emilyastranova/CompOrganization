@@ -3,5 +3,6 @@ int main(void)
 {
     int x = 1;
     int *ptr = &x;
-    printf("%d", *ptr);
+    *ptr += 1;
+    //printf("%d", *ptr);
 }
