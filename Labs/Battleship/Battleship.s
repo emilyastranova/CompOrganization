@@ -15,9 +15,8 @@
     .data
 
 prompt: .asciz  "Input a coordinate to try and hit (x,y): \n"
-horizontal: .asciz   "horizontal\n"
-vertical: .asciz   "vertical\n"
-directionTest: .asciz "direction is %d\n"
+horizontal: .asciz   "Ship Direction: horizontal\n"
+vertical: .asciz   "Ship Direction: vertical\n"
 inputString:
 	.asciz	"%d, %d\000"
 	.align	2
@@ -25,6 +24,8 @@ testOut:
 	.asciz	"You inputted: x = %d, y = %d\n"
 	.text
 randOut: .asciz "Random number is: %d\n"
+xIs: .asciz "X [fp, #%d]: %d, "
+yIs: .asciz "Y [fp, #%d]: %d\n"
 
 @ Program code
     .text
@@ -117,40 +118,32 @@ generateRandInt6:
 
 @ Generates a 1 or a 0 randomly
 generateRandBool:
-		push	{fp, lr}
-		add		fp, sp, #4
-		mov 	r0, #0
-		bl		time
-        tst 	R0, #1  	@ test whether r0 is odd
-        MOVEQ  	r1, #1 		@ if odd, set r1 to 1
-        MOVNE  	r1, #0		@ if even, set r1 to 0
-		sub		sp, fp, #4
-		pop		{fp, pc}
+	push	{fp, lr}
+	add		fp, sp, #4
+	mov 	r0, #0
+	bl		time
+	tst 	R0, #1  	@ test whether r0 is odd
+	MOVEQ  	r1, #1 		@ if odd, set r1 to 1
+	MOVNE  	r1, #0		@ if even, set r1 to 0
+	sub		sp, fp, #4
+	pop		{fp, pc}
 
 main:
     push    {fp, lr}        @ prologue. Save Frame Pointer and LR onto the stack */
 	add     fp, sp, #4      @ prologue. set up the bottom of our stack frame */
-    sub     sp, sp, #8      @ Make room for r0 and r1 address for input
 
-    sub     r0, fp, #8      @ Store address of fp -8 in r0 (x)
-    sub     r1, fp, #12     @ Store address of fp -8 in r1 (y)
-
-    bl      getGuesses
-
-	ldr	    r1, [fp, #-8]
-	ldr	    r2, [fp, #-12]
-	ldr	    r0, testOutAddr
-	bl	    printf
 
 	bl 		generateRandBool	@ Determine whether we go horizontal or vertical
+	str		r1, [fp, #-4]		@ Store on the stack
 	cmp		r1, #1				@ If odd, horizontal
-	ldreq	r0, horizontalAddr
-	ldrne	r0, verticalAddr
-	bl 		printf
+	sub		sp, sp, #44			@ Make room for 10 numbers, boolean
+	beq	horizontalCond
+	bne	verticalCond
 
-	sub		sp, sp, #32			@ Make room for 8 numbers
 
 horizontalCond:
+	ldr		r0, horizontalAddr	@ Print horizontal
+	bl		printf
     bl      generateRandInt6    @ Generate a random number between 0-6 and put in r1 (x)
 	str		r1, [fp, #-8]		@ Store first x value
 	ldr     r0, randOutAddr
@@ -161,16 +154,94 @@ horizontalCond:
 	ldr     r0, randOutAddr
     bl      printf
 
-    @ epilogue
-	sub	    sp, fp, #4
-	pop	    {fp, pc}
+	ldr		r0, [fp, #-8]		@ Load registers back
+	ldr		r1, [fp, #-12]		
+	mov		r3, #-16			@ Setting up loop number
+
+hLoop:
+	cmp		r3, #-36			@ Check if we're at end of gen
+	ble		printArray			@ End if so
+	add		r0, r0, #1			@ Make x move + 1
+	str		r0, [fp, r3]		@ Store x value
+	sub		r3, r3, #4			@ Move our index
+	str		r1, [fp, r3]		@ Store y (doesnt change)
+	sub		r3, r3, #4			@ Move our index
+	b		hLoop
+
+verticalCond:
+	ldr		r0, verticalAddr	@ Print vertical
+	bl		printf
+    bl      generateRandInt6    @ Generate a random number between 0-6 and put in r1 (x)
+	str		r1, [fp, #-8]		@ Store first x value
+	ldr     r0, randOutAddr
+    bl      printf
+
+	bl      generateRandInt9    @ Generate a random number between 0-9 and put in r1 (y)
+	str		r1, [fp, #-12]		@ Store first x value
+	ldr     r0, randOutAddr
+    bl      printf
+
+	ldr		r0, [fp, #-8]		@ Load registers back
+	ldr		r1, [fp, #-12]		
+	mov		r3, #-16			@ Setting up loop number
+
+vLoop:
+	cmp		r3, #-36			@ Check if we're at end of gen
+	ble		printArray			@ End if so
+	str		r0, [fp, r3]		@ Store x (doesn't change)
+	sub		r3, r3, #4			@ Move our index
+	add		r1, r1, #1			@ Make y move + 1
+	str		r1, [fp, r3]		@ Store y
+	sub		r3, r3, #4			@ Move our index
+	b		vLoop
+
+printArray:
+	mov		r3, #-8			@ Setting up loop number
+printLoop:
+	cmp		r3, #-36			@ Check if we're at end of gen
+	ble		getUserInput
+	ldr		r0, xIsAddr
+	mov		r1, r3
+	ldr		r2, [fp, r3]
+	str		r3,	[fp, #-4]
+	bl		printf
+	ldr		r3,	[fp, #-4]
+
+	sub		r3, r3, #4
+	ldr		r0, yIsAddr
+	mov		r1, r3
+	ldr		r2, [fp, r3]
+	str		r3,	[fp, #-4]
+	bl 		printf
+	ldr		r3,	[fp, #-4]
+	sub		r3, r3, #4
+	b 		printLoop
+
+getUserInput:
+    sub     sp, sp, #8      @ Make room for r0 and r1 address for input
+    sub     r0, fp, #8      @ Store address of fp -8 in r0 (x)
+    sub     r1, fp, #12     @ Store address of fp -8 in r1 (y)
+
+    bl      getGuesses
+	ldr	    r1, [fp, #-8]
+	ldr	    r2, [fp, #-12]
+	ldr	    r0, testOutAddr
+	bl	    printf
+
+checkCoords:
+	
+
+epilogue:
+	sub		sp, fp, #4
+	pop		{fp, pc}
 
 promptAddr: .word   prompt
 horizontalAddr: .word  horizontal
 verticalAddr: .word   vertical
-directionAddr: .word directionTest
 testOutAddr: .word testOut
 inputStringAddr: .word inputString
 randOutAddr: .word randOut
 randKey6: .word	-1840700269
 randKey9: .word	1717986919
+xIsAddr: .word xIs
+yIsAddr: .word yIs
