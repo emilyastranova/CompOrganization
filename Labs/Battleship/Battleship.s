@@ -26,6 +26,9 @@ testOut:
 randOut: .asciz "Random number is: %d\n"
 xIs: .asciz "X [fp, #%d]: %d, "
 yIs: .asciz "Y [fp, #%d]: %d\n"
+hitText: .asciz "You hit the enemy! You win!\n"
+missText: .asciz "You missed! Try again...\n\n"
+titleText: .asciz "\r\n  ____       _______ _______ _      ______  _____ _    _ _____ _____  \r\n |  _ \\   /\\|__   __|__   __| |    |  ____|/ ____| |  | |_   _|  __ \\ \r\n | |_) | /  \\  | |     | |  | |    | |__  | (___ | |__| | | | | |__) |\r\n |  _ < / /\\ \\ | |     | |  | |    |  __|  \\___ \\|  __  | | | |  ___/ \r\n | |_) / ____ \\| |     | |  | |____| |____ ____) | |  | |_| |_| |     \r\n |____/_/    \\_\\_|     |_|  |______|______|_____/|_|  |_|_____|_|     \r\n                                                                      \r\n(Lame Edition)\nBy: Tyler Harrison\n\n\n"
 
 @ Program code
     .text
@@ -37,17 +40,15 @@ getGuesses:
     @prologue
     push    {fp, lr}        @ prologue. Save Frame Pointer and LR onto the stack */
 	add     fp, sp, #4      @ prologue. set up the bottom of our stack frame */
-    
-    sub     sp, sp, #8      @ Make room for r0 and r1 address for input
-    str     r0, [fp, #-8]   @ Store address of x in memory
-    str     r1, [fp, #-12]  @ Store address of y in memory
+    str     r0, [fp, #-40]   @ Store address of x in memory
+    str     r1, [fp, #-44]  @ Store address of y in memory
 
     @ Print out prompt
     ldr     r0, promptAddr
     bl      printf
 
-	ldr	    r1, [fp, #-8]   @ Load x address into arg1
-	ldr	    r2, [fp, #-12]  @ Load y address into arg2
+	ldr	    r1, [fp, #-40]   @ Load x address into arg1
+	ldr	    r2, [fp, #-44]  @ Load y address into arg2
 	ldr	    r0, inputStringAddr @ Load address of string into scanf arg0
 	bl	    scanf
 	
@@ -132,11 +133,13 @@ main:
     push    {fp, lr}        @ prologue. Save Frame Pointer and LR onto the stack */
 	add     fp, sp, #4      @ prologue. set up the bottom of our stack frame */
 
+	ldr		r0, titleAddr		@ Print "BATTLESHIP" title
+	bl		printf			
 
 	bl 		generateRandBool	@ Determine whether we go horizontal or vertical
 	str		r1, [fp, #-4]		@ Store on the stack
 	cmp		r1, #1				@ If odd, horizontal
-	sub		sp, sp, #44			@ Make room for 10 numbers, boolean
+	sub		sp, sp, #48			@ Make room for 10 numbers, boolean
 	beq	horizontalCond
 	bne	verticalCond
 
@@ -218,18 +221,54 @@ printLoop:
 	b 		printLoop
 
 getUserInput:
-    sub     sp, sp, #8      @ Make room for r0 and r1 address for input
-    sub     r0, fp, #8      @ Store address of fp -8 in r0 (x)
-    sub     r1, fp, #12     @ Store address of fp -8 in r1 (y)
+    @ Print out prompt
+    ldr     r0, promptAddr
+    bl      printf
 
-    bl      getGuesses
-	ldr	    r1, [fp, #-8]
-	ldr	    r2, [fp, #-12]
+    sub     r0, fp, #40     	@ Store address of fp -40 in r0 (x)
+    sub     r1, fp, #44     	@ Store address of fp -44 in r1 (y)
+    str     r0, [fp, #-40]  	@ Store address of x in memory
+    str     r1, [fp, #-44]  	@ Store address of y in memory
+
+	ldr	    r1, [fp, #-40]   	@ Load x address into arg1
+	ldr	    r2, [fp, #-44]  	@ Load y address into arg2
+	ldr	    r0, inputStringAddr @ Load address of string into scanf arg0
+	bl	    scanf
+
+	ldr	    r1, [fp, #-40]		@ Load x back into r1
+	ldr	    r2, [fp, #-44]		@ Load y back into r2
 	ldr	    r0, testOutAddr
 	bl	    printf
 
 checkCoords:
-	
+	mov		r3, #-8			@ Setting up loop number
+	ldr	    r1, [fp, #-40]
+	ldr	    r2, [fp, #-44]
+xLoop:
+	cmp		r3, #-36		@ Check if we're at end of gen
+	ble		miss		@ End if no luck with x
+	ldr		r0, [fp, r3]	@ Load in x val for check
+	sub		r3, r3, #8		@ Hop in memory (index)
+	cmp		r1,	r0			@ Compare x with x guess
+	beq		yCheck
+	bne		xLoop
+
+yCheck:
+	sub		r3, r3, #4
+	ldr		r0, [fp, r3]	@ Load in y val for check
+	sub		r3, r3, #4
+	cmp		r2,	r0			@ Compare x with x guess
+	beq		hit
+	bne		xLoop
+
+miss:
+	ldr		r0, missAddr
+	bl		printf
+	b 		getUserInput
+
+hit:
+	ldr		r0, hitAddr
+	bl		printf
 
 epilogue:
 	sub		sp, fp, #4
@@ -245,3 +284,6 @@ randKey6: .word	-1840700269
 randKey9: .word	1717986919
 xIsAddr: .word xIs
 yIsAddr: .word yIs
+titleAddr: .word titleText
+hitAddr: .word hitText
+missAddr: .word missText
